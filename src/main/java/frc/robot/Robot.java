@@ -23,6 +23,22 @@ public class Robot extends TimedRobot {
     mRightDriveMotor1 = new CANSparkMax(3, MotorType.kBrushless);
     mRightDriveMotor2 = new CANSparkMax(4, MotorType.kBrushless);
     
+    mLeftDriveMotor1.restoreFactoryDefaults();
+    mLeftDriveMotor2.restoreFactoryDefaults();
+    mRightDriveMotor1.restoreFactoryDefaults();
+    mRightDriveMotor2.restoreFactoryDefaults();
+    mLeftDriveMotor1.setSmartCurrentLimit(40);
+    mLeftDriveMotor2.setSmartCurrentLimit(40);
+    mRightDriveMotor1.setSmartCurrentLimit(40);
+    mRightDriveMotor2.setSmartCurrentLimit(40);
+    mLeftDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
+
+    mLeftDriveMotor1.follow(mLeftDriveMotor2);
+    mRightDriveMotor1.follow(mRightDriveMotor2);
+
     mRobotDrive = new DifferentialDrive(mRightDriveMotor1, mRightDriveMotor2);
     mStick = new Joystick(0);
   }

@@ -5,6 +5,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
 
 public class Robot extends TimedRobot {
@@ -15,6 +16,8 @@ public class Robot extends TimedRobot {
 
   public Joystick mStick;
   public DifferentialDrive mRobotDrive;
+  public MotorControllerGroup mLeftMotors;
+  public MotorControllerGroup mRightMotors;
   
   @Override
   public void robotInit() {
@@ -22,7 +25,9 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor2 = new CANSparkMax(2, MotorType.kBrushless);
     mRightDriveMotor1 = new CANSparkMax(3, MotorType.kBrushless);
     mRightDriveMotor2 = new CANSparkMax(4, MotorType.kBrushless);
-    
+    mLeftMotors = new MotorControllerGroup(mLeftDriveMotor1,mLeftDriveMotor2);
+    mRightMotors = new MotorControllerGroup(mRightDriveMotor1, mRightDriveMotor2);
+
     mLeftDriveMotor1.restoreFactoryDefaults();
     mLeftDriveMotor2.restoreFactoryDefaults();
     mRightDriveMotor1.restoreFactoryDefaults();
@@ -39,7 +44,10 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor1.follow(mLeftDriveMotor2);
     mRightDriveMotor1.follow(mRightDriveMotor2);
 
-    mRobotDrive = new DifferentialDrive(mRightDriveMotor1, mRightDriveMotor2);
+    mLeftDriveMotor1.setInverted(true);
+    mLeftDriveMotor2.setInverted(true);
+
+    mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
     mStick = new Joystick(0);
   }
 

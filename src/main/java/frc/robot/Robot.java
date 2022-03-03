@@ -6,9 +6,11 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.PowerDistribution;
 
 public class Robot extends TimedRobot {
   public CANSparkMax mLeftDriveMotor1;
@@ -20,6 +22,7 @@ public class Robot extends TimedRobot {
   public MotorControllerGroup mRightMotors;
   public RelativeEncoder mLeftEncoder;
   public RelativeEncoder mRightEncoder;
+  public PowerDistribution mPowerDistribution;
 
   public Joystick mStick;
   public double mSpeed = 0.0;
@@ -35,7 +38,10 @@ public class Robot extends TimedRobot {
   
   @Override
   public void robotInit() {
-    mLeftDriveMotor1 = new CANSparkMax(1, MotorType.kBrushless);
+    mPowerDistribution = new PowerDistribution(1, ModuleType.kRev);
+    mPowerDistribution.clearStickyFaults();
+
+    mLeftDriveMotor1 = new CANSparkMax(5, MotorType.kBrushless);
     mLeftDriveMotor2 = new CANSparkMax(2, MotorType.kBrushless);
     mRightDriveMotor1 = new CANSparkMax(3, MotorType.kBrushless);
     mRightDriveMotor2 = new CANSparkMax(4, MotorType.kBrushless);
@@ -68,6 +74,11 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor1.setInverted(true);
     mLeftDriveMotor2.setInverted(true);
 
+    mLeftDriveMotor1.burnFlash();
+    mLeftDriveMotor2.burnFlash();
+    mRightDriveMotor1.burnFlash();
+    mRightDriveMotor2.burnFlash();
+
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
     mStick = new Joystick(0);
 
@@ -79,6 +90,8 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     //push values to dashboard here
+    SmartDashboard.putNumber("[DT] Left Encoder Position", mLeftEncoder.getPosition());
+    SmartDashboard.putNumber("[DT] Right Encoder Position", mRightEncoder.getPosition());
   }
 
 
@@ -100,7 +113,7 @@ public class Robot extends TimedRobot {
       //move off tarmac at least 45" backwards (negative position)
       if (mLeftEncoder.getPosition() > autonFinalPos){
         //System.out.println(mLeftEncoder.getPosition());
-        mRobotDrive.arcadeDrive(-0.5, 0);
+        mRobotDrive.arcadeDrive(-0.25, 0);
       }
       else {
         mRobotDrive.arcadeDrive(0, 0);

@@ -3,6 +3,7 @@ package frc.robot;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
+
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -22,6 +23,12 @@ public class Robot extends TimedRobot {
   public MotorControllerGroup mRightMotors;
   public RelativeEncoder mLeftEncoder;
   public RelativeEncoder mRightEncoder;
+
+  public CANSparkMax mIntakeMotor;
+  public CANSparkMax mIndexMotor;
+  public CANSparkMax mShooterMotor;
+  public RelativeEncoder mShooterEncoder;
+  
   public PowerDistribution mPowerDistribution;
 
   public Joystick mStick;
@@ -32,15 +39,17 @@ public class Robot extends TimedRobot {
   public double gearRatio = 4.89610; //nearly 5:1
 
   public double autonStartTime;
-  public double autonWaitTime;
+  public double autonWaitTime = 2; //seconds to wait
   public double autonCurrentTime;
-  public double autonFinalPos;
+  public double autonFinalPos = -45; //inches to drive backwards
   
   @Override
   public void robotInit() {
+    //Power Distribution -- must be at CAN ID 1
     mPowerDistribution = new PowerDistribution(1, ModuleType.kRev);
     mPowerDistribution.clearStickyFaults();
 
+    //Drive Motors
     mLeftDriveMotor1 = new CANSparkMax(5, MotorType.kBrushless);
     mLeftDriveMotor2 = new CANSparkMax(2, MotorType.kBrushless);
     mRightDriveMotor1 = new CANSparkMax(3, MotorType.kBrushless);
@@ -80,18 +89,40 @@ public class Robot extends TimedRobot {
     mRightDriveMotor2.burnFlash();
 
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
-    mStick = new Joystick(0);
 
-    autonWaitTime = 2;
-    autonFinalPos = -45;
+    //Main Mechanism
+    mIntakeMotor = new CANSparkMax(6, MotorType.kBrushless);
+    mIndexMotor = new CANSparkMax(7, MotorType.kBrushless);
+    mShooterMotor = new CANSparkMax(8, MotorType.kBrushless);
+    mRightDriveMotor2 = new CANSparkMax(4, MotorType.kBrushless);
+
+    mIntakeMotor.restoreFactoryDefaults();
+    mIndexMotor.restoreFactoryDefaults();
+    mShooterMotor.restoreFactoryDefaults();
+    mIntakeMotor.setSmartCurrentLimit(40);
+    mIndexMotor.setSmartCurrentLimit(40);
+    mShooterMotor.setSmartCurrentLimit(40);
+    mIndexMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mIndexMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mShooterMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
+
+    mShooterEncoder = mShooterMotor.getEncoder();
+
+    mIntakeMotor.burnFlash();
+    mIndexMotor.burnFlash();
+    mShooterMotor.burnFlash();
+
+    mStick = new Joystick(0);
   }
 
 
   @Override
   public void robotPeriodic() {
     //push values to dashboard here
-    SmartDashboard.putNumber("[DT] Left Encoder Position", mLeftEncoder.getPosition());
-    SmartDashboard.putNumber("[DT] Right Encoder Position", mRightEncoder.getPosition());
+    SmartDashboard.putNumber("[DT] LT-EncPos", mLeftEncoder.getPosition());
+    SmartDashboard.putNumber("[DT] RT-EncPos", mRightEncoder.getPosition());
+    SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
+    
   }
 
 

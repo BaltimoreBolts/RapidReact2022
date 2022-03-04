@@ -4,6 +4,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -31,6 +32,10 @@ public class Robot extends TimedRobot {
   
   public PowerDistribution mPowerDistribution;
 
+  public DigitalInput mNoCargoAtIntake;
+  public boolean mCargoAtIntake;
+  public DigitalInput mCargoBeforeShooter;
+
   public Joystick mStick;
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
@@ -42,6 +47,12 @@ public class Robot extends TimedRobot {
   public double autonWaitTime = 2; //seconds to wait
   public double autonCurrentTime;
   public double autonFinalPos = -45; //inches to drive backwards
+  public boolean mShootNow = false;
+  public double shootStartTime;
+  public double shootCurrentTime;
+  public double shootOneTime = 2; //seconds to fire 1 cargo
+  public double shootTwoTime = 5; //seconds to fire 2 cargo
+  public double shootTime = 0;
   
   @Override
   public void robotInit() {
@@ -90,11 +101,14 @@ public class Robot extends TimedRobot {
 
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
 
+    mNoCargoAtIntake = new DigitalInput(0); //TRUE = no cargo; FALSE = cargo!
+    mCargoBeforeShooter = new DigitalInput(1); //TRUE = cargo!; FALSE = no cargo
+
     //Main Mechanism
+    /*
     mIntakeMotor = new CANSparkMax(6, MotorType.kBrushless);
     mIndexMotor = new CANSparkMax(7, MotorType.kBrushless);
     mShooterMotor = new CANSparkMax(8, MotorType.kBrushless);
-    mRightDriveMotor2 = new CANSparkMax(4, MotorType.kBrushless);
 
     mIntakeMotor.restoreFactoryDefaults();
     mIndexMotor.restoreFactoryDefaults();
@@ -111,18 +125,21 @@ public class Robot extends TimedRobot {
     mIntakeMotor.burnFlash();
     mIndexMotor.burnFlash();
     mShooterMotor.burnFlash();
-
+    */
     mStick = new Joystick(0);
   }
 
 
   @Override
   public void robotPeriodic() {
+    mCargoAtIntake = !mNoCargoAtIntake.get(); //invert - TRUE=cargo!
+
     //push values to dashboard here
     SmartDashboard.putNumber("[DT] LT-EncPos", mLeftEncoder.getPosition());
     SmartDashboard.putNumber("[DT] RT-EncPos", mRightEncoder.getPosition());
-    SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
-    
+    //SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
+    SmartDashboard.putBoolean("[Cargo] Intake", mCargoAtIntake);
+    SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
   }
 
 
@@ -140,6 +157,16 @@ public class Robot extends TimedRobot {
     //wait x time
     if ((autonCurrentTime - autonStartTime) >= autonWaitTime) {
       //shoot cargo
+      /*
+      read camera to find good position?
+      move robot if needed to correct position?
+      spin up fly wheel to 0.75 (~4000 RPM)
+      wait x seconds?
+      move index motor to push cargo into flywheel
+      stop both motors after x seconds
+  
+      wait for shoot routine to complete before moving off tarmac
+      */
 
       //move off tarmac at least 45" backwards (negative position)
       if (mLeftEncoder.getPosition() > autonFinalPos){
@@ -166,9 +193,64 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    mSpeed = -mStick.getY() * (mStick.getThrottle()+1)/2;
-    mTwist = mStick.getTwist() * (mStick.getThrottle()+1)/2;
+    //Drive robot
+    mSpeed = -mStick.getY() * Math.abs(mStick.getThrottle());
+    mTwist = mStick.getTwist() * Math.abs(mStick.getThrottle());
     mRobotDrive.arcadeDrive(mSpeed, mTwist);
+
+    //Reset encoder
+    if (mStick.getRawButton(12)) {
+      mRightEncoder.setPosition(0);
+      mLeftEncoder.setPosition(0);
+    }
+
+    /*
+    //Intake cargo
+    if (mStick.getRawButton(7) && !mCargoAtIntake){
+      mIntakeMotor.set(0.5);
+    }
+    else {
+      mIntakeMotor.stopMotor();
+    }
+
+    //Index cargo - allow control if not shooting
+    if (!mShootNow) {
+      if (mStick.getRawButton(11) && !mCargoBeforeShooter.get()){
+        mIndexMotor.set(0.5);
+      }
+      else {
+        mIndexMotor.stopMotor();
+      }
+    }
+
+    //Shoot - start fly wheel if cargo in place
+    if (mStick.getRawButton(1) && mCargoBeforeShooter.get()){
+      mShootNow = true;
+      mShooterMotor.set(0.75);
+      shootStartTime = Timer.getFPGATimestamp();
+      
+      //decide whether to shoot one or two cargo
+      if (mCargoAtIntake && mCargoBeforeShooter.get()) {
+        shootTime = shootTwoTime;
+      }
+      else {
+        shootTime = shootOneTime;
+      }
+    }
+
+    //Shoot - if flywheel up to speed
+    if (mShootNow && mShooterEncoder.getVelocity() >= 4000){
+      shootCurrentTime = Timer.getFPGATimestamp();
+      if (shootCurrentTime - shootStartTime < shootTime) {
+        mIndexMotor.set(0.5);
+      }
+      else {
+        mIndexMotor.stopMotor();
+        mShooterMotor.stopMotor();
+        mShootNow = false;
+      }
+    }
+    */
   }
 
   @Override

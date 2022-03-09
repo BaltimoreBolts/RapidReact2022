@@ -105,7 +105,7 @@ public class Robot extends TimedRobot {
     mCargoBeforeShooter = new DigitalInput(1); //TRUE = cargo!; FALSE = no cargo
 
     //Main Mechanism
-    /*
+    
     mIntakeMotor = new CANSparkMax(6, MotorType.kBrushless);
     mIndexMotor = new CANSparkMax(7, MotorType.kBrushless);
     mShooterMotor = new CANSparkMax(8, MotorType.kBrushless);
@@ -125,7 +125,7 @@ public class Robot extends TimedRobot {
     mIntakeMotor.burnFlash();
     mIndexMotor.burnFlash();
     mShooterMotor.burnFlash();
-    */
+    
     mStick = new Joystick(0);
   }
 
@@ -137,7 +137,7 @@ public class Robot extends TimedRobot {
     //push values to dashboard here
     SmartDashboard.putNumber("[DT] LT-EncPos", mLeftEncoder.getPosition());
     SmartDashboard.putNumber("[DT] RT-EncPos", mRightEncoder.getPosition());
-    //SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
+    SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
     SmartDashboard.putBoolean("[Cargo] Intake", mCargoAtIntake);
     SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
   }
@@ -204,10 +204,10 @@ public class Robot extends TimedRobot {
       mLeftEncoder.setPosition(0);
     }
 
-    /*
+    
     //Intake cargo
     if (mStick.getRawButton(7) && !mCargoAtIntake){
-      mIntakeMotor.set(0.5);
+      mIntakeMotor.set(-0.5);
     }
     else {
       mIntakeMotor.stopMotor();
@@ -216,7 +216,7 @@ public class Robot extends TimedRobot {
     //Index cargo - allow control if not shooting
     if (!mShootNow) {
       if (mStick.getRawButton(11) && !mCargoBeforeShooter.get()){
-        mIndexMotor.set(0.5);
+        mIndexMotor.set(0.1);
       }
       else {
         mIndexMotor.stopMotor();
@@ -250,7 +250,7 @@ public class Robot extends TimedRobot {
         mShootNow = false;
       }
     }
-    */
+    
   }
 
   @Override

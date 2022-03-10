@@ -48,6 +48,7 @@ public class Robot extends TimedRobot {
   public double autonCurrentTime;
   public double autonFinalPos = -45; //inches to drive backwards
   public boolean mShootNow = false;
+  public boolean mIntakeNow = false;
   public double shootStartTime;
   public double shootCurrentTime;
   public double shootOneTime = 2; //seconds to fire 1 cargo
@@ -121,6 +122,7 @@ public class Robot extends TimedRobot {
     mShooterMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
 
     mShooterEncoder = mShooterMotor.getEncoder();
+    mIntakeMotor.setInverted(true);
 
     mIntakeMotor.burnFlash();
     mIndexMotor.burnFlash();
@@ -194,8 +196,8 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     //Drive robot
-    mSpeed = -mStick.getY() * Math.abs(mStick.getThrottle());
-    mTwist = mStick.getTwist() * Math.abs(mStick.getThrottle());
+    mSpeed = -mStick.getY() * ((mStick.getThrottle()*-0.5)+0.5);
+    mTwist = mStick.getTwist() * ((mStick.getThrottle()*-0.5)+0.5);
     mRobotDrive.arcadeDrive(mSpeed, mTwist);
 
     //Reset encoder
@@ -206,20 +208,31 @@ public class Robot extends TimedRobot {
 
     
     //Intake cargo
-    if (mStick.getRawButton(7) && !mCargoAtIntake){
-      mIntakeMotor.set(-0.5);
-    }
-    else {
-      mIntakeMotor.stopMotor();
+    if (!mIntakeNow){
+      if (mStick.getRawButton(7) && !mCargoAtIntake){
+        mIntakeMotor.set(0.5);
+      }
+      else {
+        mIntakeMotor.stopMotor();
+      }
     }
 
     //Index cargo - allow control if not shooting
     if (!mShootNow) {
       if (mStick.getRawButton(11) && !mCargoBeforeShooter.get()){
-        mIndexMotor.set(0.1);
+        mIntakeNow = true;
+      }
+    }
+
+    if (mIntakeNow) {
+      if (!mCargoBeforeShooter.get()) {
+        mIndexMotor.set(0.5);
+        mIntakeMotor.set(0.5);
       }
       else {
         mIndexMotor.stopMotor();
+        mIntakeMotor.stopMotor();
+        mIntakeNow = false;
       }
     }
 

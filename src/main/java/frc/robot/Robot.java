@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends TimedRobot {
   public CANSparkMax mLeftDriveMotor1;
@@ -31,12 +32,14 @@ public class Robot extends TimedRobot {
   public RelativeEncoder mShooterEncoder;
   
   public PowerDistribution mPowerDistribution;
+  public Servo mCameraServo;
 
   public DigitalInput mNoCargoAtIntake;
   public boolean mCargoAtIntake;
   public DigitalInput mCargoBeforeShooter;
 
   public Joystick mStick;
+  public Joystick mXbox;
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
 
@@ -47,8 +50,22 @@ public class Robot extends TimedRobot {
   public double autonWaitTime = 2; //seconds to wait
   public double autonCurrentTime;
   public double autonFinalPos = -45; //inches to drive backwards
+  
   public boolean mShootNow = false;
   public boolean mIntakeNow = false;
+  public boolean mIntakeAndIndexNow = false;
+
+  public double intakeStartTime;
+  public double intakeCurrentTime;
+  public double intakeTime = 1; //seconds to intake cargo
+
+  public double shootHighPercent = 0.80;
+  public double shootHighSpeed = 4200;
+  public double shootLowPercent = 0.50;
+  public double shootLowSpeed = 2500;
+  public double shootPercent;
+  public double shootSpeed;
+
   public double shootStartTime;
   public double shootCurrentTime;
   public double shootOneTime = 2; //seconds to fire 1 cargo
@@ -60,6 +77,7 @@ public class Robot extends TimedRobot {
     //Power Distribution -- must be at CAN ID 1
     mPowerDistribution = new PowerDistribution(1, ModuleType.kRev);
     mPowerDistribution.clearStickyFaults();
+    mPowerDistribution.setSwitchableChannel(false);
 
     //Drive Motors
     mLeftDriveMotor1 = new CANSparkMax(5, MotorType.kBrushless);
@@ -102,8 +120,10 @@ public class Robot extends TimedRobot {
 
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
 
+    //Sensors
     mNoCargoAtIntake = new DigitalInput(0); //TRUE = no cargo; FALSE = cargo!
     mCargoBeforeShooter = new DigitalInput(1); //TRUE = cargo!; FALSE = no cargo
+    mCameraServo = new Servo(0);
 
     //Main Mechanism
     
@@ -129,6 +149,13 @@ public class Robot extends TimedRobot {
     mShooterMotor.burnFlash();
     
     mStick = new Joystick(0);
+    mXbox = new Joystick(1);
+    
+    mIntakeNow = false;
+    mShootNow = false;
+    mIntakeAndIndexNow = false;
+    shootPercent = 0;
+    shootSpeed = 0;
   }
 
 
@@ -136,12 +163,23 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     mCargoAtIntake = !mNoCargoAtIntake.get(); //invert - TRUE=cargo!
 
+    //Light control
+    if (mCargoBeforeShooter.get()) {
+        mPowerDistribution.setSwitchableChannel(true);
+    }
+    else {
+        mPowerDistribution.setSwitchableChannel(false);
+      }
+
     //push values to dashboard here
     SmartDashboard.putNumber("[DT] LT-EncPos", mLeftEncoder.getPosition());
     SmartDashboard.putNumber("[DT] RT-EncPos", mRightEncoder.getPosition());
     SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
     SmartDashboard.putBoolean("[Cargo] Intake", mCargoAtIntake);
     SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
+    SmartDashboard.putNumber("Servo Angle", mCameraServo.getAngle());
+    SmartDashboard.putNumber("Shoot Time", shootTime);
+
   }
 
 
@@ -149,6 +187,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
+    mCameraServo.setPosition(0.25);
     autonStartTime = Timer.getFPGATimestamp();
   }
 
@@ -173,7 +212,7 @@ public class Robot extends TimedRobot {
       //move off tarmac at least 45" backwards (negative position)
       if (mLeftEncoder.getPosition() > autonFinalPos){
         //System.out.println(mLeftEncoder.getPosition());
-        mRobotDrive.arcadeDrive(-0.25, 0);
+        mRobotDrive.arcadeDrive(-0.35, 0);
       }
       else {
         mRobotDrive.arcadeDrive(0, 0);
@@ -185,13 +224,18 @@ public class Robot extends TimedRobot {
     
   }
 
-
   @Override
   public void teleopInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-  }
 
+    mIntakeNow = false;
+    mShootNow = false;
+    mIntakeAndIndexNow = false;
+
+    //set servo to 45deg angle up
+    mCameraServo.setPosition(0.25);
+  }
 
   @Override
   public void teleopPeriodic() {
@@ -205,42 +249,59 @@ public class Robot extends TimedRobot {
       mRightEncoder.setPosition(0);
       mLeftEncoder.setPosition(0);
     }
-
     
-    //Intake cargo
-    if (!mIntakeNow){
-      if (mStick.getRawButton(7) && !mCargoAtIntake){
+    //If no cargo in hand -> take cargo all the way into index
+    if (!mCargoAtIntake && !mCargoBeforeShooter.get() && mStick.getRawButton(1)) {
+      mIntakeAndIndexNow = true;
+      intakeStartTime = Timer.getFPGATimestamp();
+    }
+
+    if (mIntakeAndIndexNow){
+      intakeCurrentTime = Timer.getFPGATimestamp();
+      if (!mCargoBeforeShooter.get() && (intakeCurrentTime-intakeStartTime<intakeTime)){
         mIntakeMotor.set(0.5);
+        mIndexMotor.set(0.5);
       }
       else {
         mIntakeMotor.stopMotor();
+        mIndexMotor.stopMotor();
+        mIntakeAndIndexNow = false;
       }
     }
 
-    //Index cargo - allow control if not shooting
-    if (!mShootNow) {
-      if (mStick.getRawButton(11) && !mCargoBeforeShooter.get()){
-        mIntakeNow = true;
-      }
+    //If cargo in body, ONLY bring into intake
+    if (!mCargoAtIntake && mCargoBeforeShooter.get() && mStick.getRawButton(1)){
+      mIntakeNow = true;
+      intakeStartTime = Timer.getFPGATimestamp();
     }
 
-    if (mIntakeNow) {
-      if (!mCargoBeforeShooter.get()) {
-        mIndexMotor.set(0.5);
+    if (mIntakeNow){
+      intakeCurrentTime = Timer.getFPGATimestamp();
+      if (!mCargoAtIntake && (intakeCurrentTime-intakeStartTime<intakeTime)){
         mIntakeMotor.set(0.5);
       }
       else {
-        mIndexMotor.stopMotor();
         mIntakeMotor.stopMotor();
         mIntakeNow = false;
       }
     }
 
-    //Shoot - start fly wheel if cargo in place
-    if (mStick.getRawButton(1) && mCargoBeforeShooter.get()){
-      mShootNow = true;
-      mShooterMotor.set(0.75);
-      shootStartTime = Timer.getFPGATimestamp();
+    //Shoot High (Xbox Y) - start fly wheel if cargo in place
+    if (mCargoBeforeShooter.get()){
+
+      //Low shoot -- Xbox A
+      if (mXbox.getRawButton(1)) {
+        mShootNow = true;
+        mShooterMotor.set(shootLowPercent);
+        shootStartTime = Timer.getFPGATimestamp();
+      }
+
+      //High Shoot -- Xbox Y
+      if (mXbox.getRawButton(4)) {
+        mShootNow = true;
+        mShooterMotor.set(shootHighPercent);
+        shootStartTime = Timer.getFPGATimestamp();
+      }
       
       //decide whether to shoot one or two cargo
       if (mCargoAtIntake && mCargoBeforeShooter.get()) {
@@ -251,14 +312,16 @@ public class Robot extends TimedRobot {
       }
     }
 
-    //Shoot - if flywheel up to speed
-    if (mShootNow && mShooterEncoder.getVelocity() >= 4000){
+    //Shoot - wait until flywheel up to speed
+    if (mShootNow && mShooterEncoder.getVelocity() >= shootSpeed){
       shootCurrentTime = Timer.getFPGATimestamp();
       if (shootCurrentTime - shootStartTime < shootTime) {
         mIndexMotor.set(0.5);
+        mIntakeMotor.set(0.5);
       }
       else {
         mIndexMotor.stopMotor();
+        mIntakeMotor.stopMotor();
         mShooterMotor.stopMotor();
         mShootNow = false;
       }

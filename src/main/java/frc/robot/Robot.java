@@ -208,9 +208,9 @@ public class Robot extends TimedRobot {
 
         // Low shoot -- Xbox A
         mShootNow = true;
-        mShooterMotor.set(shootLowPercent);
+        mShooterMotor.set(shootHighPercent);
         shootStartTime = Timer.getFPGATimestamp();
-        shootSpeed = shootLowSpeed;
+        shootSpeed = shootHighSpeed;
         shootTime = shootOneTime;
         mRobotDrive.arcadeDrive(0, 0);
       }

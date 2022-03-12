@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -39,7 +40,7 @@ public class Robot extends TimedRobot {
   public DigitalInput mCargoBeforeShooter;
 
   public Joystick mStick;
-  public Joystick mXbox;
+  public XboxController mXbox;
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
 
@@ -149,7 +150,7 @@ public class Robot extends TimedRobot {
     mShooterMotor.burnFlash();
     
     mStick = new Joystick(0);
-    mXbox = new Joystick(1);
+    mXbox = new XboxController(1);
     
     mIntakeNow = false;
     mShootNow = false;
@@ -187,7 +188,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-    mCameraServo.setPosition(0.25);
+    mCameraServo.setAngle(70);
     autonStartTime = Timer.getFPGATimestamp();
   }
 
@@ -234,7 +235,7 @@ public class Robot extends TimedRobot {
     mIntakeAndIndexNow = false;
 
     //set servo to 45deg angle up
-    mCameraServo.setPosition(0.25);
+    mCameraServo.setAngle(10);
   }
 
   @Override
@@ -248,6 +249,21 @@ public class Robot extends TimedRobot {
     if (mStick.getRawButton(12)) {
       mRightEncoder.setPosition(0);
       mLeftEncoder.setPosition(0);
+    }
+
+    //Set camera servo to top
+    if (mXbox.getPOV()==0) {
+      mCameraServo.setAngle(70);
+    }
+    
+    //Set camera servo to down
+    if (mXbox.getPOV()==180) {
+      mCameraServo.setAngle(10);
+    }
+
+    //Set camera servo to mid
+    if (mXbox.getPOV()==270){
+      mCameraServo.setAngle(45);
     }
     
     //If no cargo in hand -> take cargo all the way into index
@@ -290,17 +306,19 @@ public class Robot extends TimedRobot {
     if (mCargoBeforeShooter.get()){
 
       //Low shoot -- Xbox A
-      if (mXbox.getRawButton(1)) {
+      if (mXbox.getAButton()) {
         mShootNow = true;
         mShooterMotor.set(shootLowPercent);
         shootStartTime = Timer.getFPGATimestamp();
+        shootSpeed = shootLowSpeed;
       }
 
       //High Shoot -- Xbox Y
-      if (mXbox.getRawButton(4)) {
+      if (mXbox.getYButton()) {
         mShootNow = true;
         mShooterMotor.set(shootHighPercent);
         shootStartTime = Timer.getFPGATimestamp();
+        shootSpeed = shootHighSpeed;
       }
       
       //decide whether to shoot one or two cargo

@@ -58,7 +58,7 @@ public class Robot extends TimedRobot {
 
   public double intakeStartTime;
   public double intakeCurrentTime;
-  public double intakeTime = 1; //seconds to intake cargo
+  public double intakeTime = 2; //seconds to intake cargo
 
   public double shootHighPercent = 0.80;
   public double shootHighSpeed = 4200;

@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
   public double autonStartTime;
   public double autonWaitTime = 2; // seconds to wait
   public double autonCurrentTime;
-  public double autonFinalPos = -45; // inches to drive backwards
+  public double autonFinalPos = -60; // inches to drive backwards
 
   public boolean mShootNow = false;
   public boolean mIntakeNow = false;

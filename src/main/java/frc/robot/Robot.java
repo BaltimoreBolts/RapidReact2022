@@ -44,7 +44,7 @@ public class Robot extends TimedRobot {
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
 
-  public double wheelDia = 3.5; // inches
+  public double wheelDia = 4.0; // inches
   public double gearRatio = 4.89610; // nearly 5:1
 
   public double autonStartTime;
@@ -292,7 +292,7 @@ public class Robot extends TimedRobot {
       mCameraServo.setAngle(45);
     }
     */
-    
+
     // If no cargo in hand -> take cargo all the way into index
     if (!mCargoAtIntake && !mCargoBeforeShooter.get() && mStick.getRawButton(1)) {
       mIntakeAndIndexNow = true;

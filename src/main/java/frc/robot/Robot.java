@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.Servo;
+//import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends TimedRobot {
   public CANSparkMax mLeftDriveMotor1;
@@ -33,7 +33,7 @@ public class Robot extends TimedRobot {
   public RelativeEncoder mShooterEncoder;
 
   public PowerDistribution mPowerDistribution;
-  public Servo mCameraServo;
+  //public Servo mCameraServo;
 
   public DigitalInput mNoCargoAtIntake;
   public boolean mCargoAtIntake;
@@ -124,7 +124,7 @@ public class Robot extends TimedRobot {
     // Sensors
     mNoCargoAtIntake = new DigitalInput(0); // TRUE = no cargo; FALSE = cargo!
     mCargoBeforeShooter = new DigitalInput(1); // TRUE = cargo!; FALSE = no cargo
-    mCameraServo = new Servo(0);
+    //mCameraServo = new Servo(0);
 
     // Main Mechanism
 
@@ -176,7 +176,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
     SmartDashboard.putBoolean("[Cargo] Intake", mCargoAtIntake);
     SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
-    SmartDashboard.putNumber("Servo Angle", mCameraServo.getAngle());
+    //SmartDashboard.putNumber("Servo Angle", mCameraServo.getAngle());
     SmartDashboard.putNumber("Shoot Time", shootTime);
   }
 
@@ -184,7 +184,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-    mCameraServo.setAngle(70);
+    //mCameraServo.setAngle(70);
     autonStartTime = Timer.getFPGATimestamp();
   }
 
@@ -260,7 +260,7 @@ public class Robot extends TimedRobot {
     mIntakeAndIndexNow = false;
 
     // set servo to 45deg angle up
-    mCameraServo.setAngle(10);
+    //mCameraServo.setAngle(10);
   }
 
   @Override
@@ -277,6 +277,7 @@ public class Robot extends TimedRobot {
     }
 
     // Set camera servo to top
+    /*
     if (mXbox.getPOV() == 0) {
       mCameraServo.setAngle(70);
     }
@@ -290,7 +291,8 @@ public class Robot extends TimedRobot {
     if (mXbox.getPOV() == 270) {
       mCameraServo.setAngle(45);
     }
-
+    */
+    
     // If no cargo in hand -> take cargo all the way into index
     if (!mCargoAtIntake && !mCargoBeforeShooter.get() && mStick.getRawButton(1)) {
       mIntakeAndIndexNow = true;

@@ -55,6 +55,7 @@ public class Robot extends TimedRobot {
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
   public double autonRotateTime = 0.5; //seconds to rotate
+  public double autonSpinStartTime;
   public double autonDistToFender = 70; 
   public boolean robotAtPosOne = false;
   public boolean robotSpinComplete = false;
@@ -173,7 +174,6 @@ public class Robot extends TimedRobot {
     mCargoAtIntake = !mNoCargoAtIntake.get(); // invert - TRUE=cargo!
     mAutonSwitch = !mSwitch.get(); // TRUE = two cargo; FALSE = one cargo
 
-
     // Light control
     if (mCargoBeforeShooter.get()) {
       mPowerDistribution.setSwitchableChannel(true);
@@ -190,6 +190,10 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putNumber("Servo Angle", mCameraServo.getAngle());
     SmartDashboard.putNumber("Shoot Time", shootTime);
     SmartDashboard.putBoolean("AutonSwitch", mAutonSwitch);
+    SmartDashboard.putBoolean("posone", robotAtPosOne);
+    SmartDashboard.putBoolean("spincomp", robotSpinComplete);
+    SmartDashboard.putBoolean("fender", robotAtFender);
+    
   }
 
   @Override
@@ -201,6 +205,7 @@ public class Robot extends TimedRobot {
     
     robotAtPosOne = false;
     robotSpinComplete = false;
+    robotAtFender = false;
   }
 
   @Override
@@ -260,7 +265,6 @@ public class Robot extends TimedRobot {
         // move off tarmac at least 45" backwards (negative position)
         if (!mShootNow) {
           if (mLeftEncoder.getPosition() > autonFinalPos) {
-            // System.out.println(mLeftEncoder.getPosition());
             mRobotDrive.arcadeDrive(-0.35, 0);
           } else {
             mRobotDrive.arcadeDrive(0, 0);
@@ -269,6 +273,7 @@ public class Robot extends TimedRobot {
           mRobotDrive.arcadeDrive(0, 0);
         }
       }
+
       else { //two-cargo auto
         //move forward to autoPositionOne
         //start Intake to pick up cargo
@@ -278,23 +283,26 @@ public class Robot extends TimedRobot {
         //fire
 
         // move forward to autonPositionOne
-        if (!robotAtPosOne && (mLeftEncoder.getPosition() < autonPositionOne)) {
-          mRobotDrive.arcadeDrive(0.4, 0);
-          
+        if (!robotAtPosOne) {
+          if (mLeftEncoder.getPosition() < (autonPositionOne-20)){
+            mRobotDrive.arcadeDrive(0.4, 0);
+          }
           //if robot within 10" of first position, turn on intake
-          if (mLeftEncoder.getPosition() >= (autonPositionOne-10)){
+          else if (mLeftEncoder.getPosition() < (autonPositionOne)){
             mIntakeMotor.set(0.5);
+            mRobotDrive.arcadeDrive(0.4, 0);
           }
           else {
             mIntakeMotor.set(0);
             mRobotDrive.arcadeDrive(0, 0);
             robotAtPosOne = true;
+            autonSpinStartTime = Timer.getFPGATimestamp();
           }
         } 
 
         //spin 180 degrees
         if (robotAtPosOne && !robotSpinComplete){
-          if ((autonCurrentTime - autonStartTime) <= autonRotateTime) {
+          if ((autonCurrentTime - autonSpinStartTime) < autonRotateTime) {
             mRobotDrive.arcadeDrive(0, 0.35);
           }
           else {
@@ -321,20 +329,22 @@ public class Robot extends TimedRobot {
               robotAtFender = true;  
             }
           }
-        }   
-     
-        // Shoot - start fly wheel if cargo in place
-        if (mCargoBeforeShooter.get()) {
-
-          // High shoot
-          mShootNow = true;
-          mShooterMotor.set(shootHighPercent);
-          shootStartTime = Timer.getFPGATimestamp();
-          shootSpeed = shootHighSpeed;
-          shootTime = shootTwoTime;
-          mRobotDrive.arcadeDrive(0, 0);
         }
 
+        if (robotAtFender){
+          mRobotDrive.arcadeDrive(0, 0);
+
+          if (mCargoBeforeShooter.get()) {
+            // High shoot
+            mShootNow = true;
+            mShooterMotor.set(shootHighPercent);
+            shootStartTime = Timer.getFPGATimestamp();
+            shootSpeed = shootHighSpeed;
+            shootTime = shootTwoTime;
+            mRobotDrive.arcadeDrive(0, 0);
+          }
+        }
+     
         // Shoot - wait until flywheel up to speed
         if (mShootNow && mShooterEncoder.getVelocity() >= shootSpeed) {
           shootCurrentTime = Timer.getFPGATimestamp();
@@ -350,6 +360,7 @@ public class Robot extends TimedRobot {
             mShootNow = false;
           }
         }
+        
       }
 
     } // not past wait time
@@ -480,6 +491,14 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    mRightEncoder.setPosition(0);
+    mLeftEncoder.setPosition(0);
+    robotAtPosOne = false;
+    robotSpinComplete = false;
+    robotAtFender = false;
+    mIntakeNow = false;
+    mShootNow = false;
+    mIntakeAndIndexNow = false;
   }
 
   @Override

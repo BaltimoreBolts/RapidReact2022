@@ -46,17 +46,17 @@ public class Robot extends TimedRobot {
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
 
-  public double wheelDia = 4.0; // inches
+  public double wheelDia = 3.5; // inches
   public double gearRatio = 4.89610; // nearly 5:1
+  public double rWidth = 28.5; // robot width in inches
 
   public double autonStartTime;
   public double autonWaitTime = 2; // seconds to wait
   public double autonCurrentTime;
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
-  public double autonRotateTime = 0.5; //seconds to rotate
-  public double autonSpinStartTime;
-  public double autonDistToFender = 70; 
+  public double autonSpinDistance = 50;
+  public double autonDistToFender = 90; 
   public boolean robotAtPosOne = false;
   public boolean robotSpinComplete = false;
   public boolean robotAtFender = false;
@@ -79,7 +79,7 @@ public class Robot extends TimedRobot {
   public double shootStartTime;
   public double shootCurrentTime;
   public double shootOneTime = 2; // seconds to fire 1 cargo
-  public double shootTwoTime = 5; // seconds to fire 2 cargo
+  public double shootTwoTime = 3; // seconds to fire 2 cargo
   public double shootTime = 0;
 
   @Override
@@ -206,6 +206,11 @@ public class Robot extends TimedRobot {
     robotAtPosOne = false;
     robotSpinComplete = false;
     robotAtFender = false;
+
+    mLeftDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
   }
 
   @Override
@@ -287,7 +292,7 @@ public class Robot extends TimedRobot {
           if (mLeftEncoder.getPosition() < (autonPositionOne-20)){
             mRobotDrive.arcadeDrive(0.4, 0);
           }
-          //if robot within 10" of first position, turn on intake
+          //if robot within 20" of first position, turn on intake
           else if (mLeftEncoder.getPosition() < (autonPositionOne)){
             mIntakeMotor.set(0.5);
             mRobotDrive.arcadeDrive(0.4, 0);
@@ -295,33 +300,30 @@ public class Robot extends TimedRobot {
           else {
             mIntakeMotor.set(0);
             mRobotDrive.arcadeDrive(0, 0);
+
             robotAtPosOne = true;
-            autonSpinStartTime = Timer.getFPGATimestamp();
           }
         } 
 
         //spin 180 degrees
         if (robotAtPosOne && !robotSpinComplete){
-          if ((autonCurrentTime - autonSpinStartTime) < autonRotateTime) {
+          if (mLeftEncoder.getPosition() <= (autonPositionOne + autonSpinDistance)) {
             mRobotDrive.arcadeDrive(0, 0.35);
           }
           else {
             mRobotDrive.arcadeDrive(0, 0);
             robotSpinComplete = true;
-
-            //reset encoders
-            mRightEncoder.setPosition(0);
-            mLeftEncoder.setPosition(0);
           }
+          
         }
         
         //drive to fender
         if (robotSpinComplete && !robotAtFender) {
-          if (mLeftEncoder.getPosition() < (autonPositionOne + autonDistToFender - 10)) {
+          if (mLeftEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender - 24)) {
             mRobotDrive.arcadeDrive(0.5, 0);
             }
           else {
-            if (mLeftEncoder.getPosition() < (autonPositionOne + autonDistToFender)){ 
+            if (mLeftEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender)){ 
               mRobotDrive.arcadeDrive(0.25, 0);
             }
             else {
@@ -374,6 +376,10 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
+    mIndexMotor.stopMotor();
+    mIntakeMotor.stopMotor();
+    mShooterMotor.stopMotor();
+    mRobotDrive.arcadeDrive(0, 0);
 
     mIntakeNow = false;
     mShootNow = false;
@@ -381,6 +387,11 @@ public class Robot extends TimedRobot {
 
     // set servo to 45deg angle up
     //mCameraServo.setAngle(10);
+
+    mLeftDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
+    mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
   }
 
   @Override
@@ -499,9 +510,19 @@ public class Robot extends TimedRobot {
     mIntakeNow = false;
     mShootNow = false;
     mIntakeAndIndexNow = false;
+    shootTime = 0;
   }
 
   @Override
   public void disabledPeriodic() {
+    mRightEncoder.setPosition(0);
+    mLeftEncoder.setPosition(0);
+    robotAtPosOne = false;
+    robotSpinComplete = false;
+    robotAtFender = false;
+    mIntakeNow = false;
+    mShootNow = false;
+    mIntakeAndIndexNow = false;
+    shootTime = 0;
   }
 }

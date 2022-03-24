@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.PowerDistribution;
-//import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends TimedRobot {
   public CANSparkMax mLeftDriveMotor1;
@@ -46,7 +45,7 @@ public class Robot extends TimedRobot {
   public double mSpeed = 0.0;
   public double mTwist = 0.0;
 
-  public double wheelDia = 3.5; // inches
+  public double wheelDia = 4.0; // inches
   public double gearRatio = 4.89610; // nearly 5:1
   public double rWidth = 28.5; // robot width in inches
 
@@ -55,8 +54,8 @@ public class Robot extends TimedRobot {
   public double autonCurrentTime;
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
-  public double autonSpinDistance = 50;
-  public double autonDistToFender = 90; 
+  public double autonSpinDistance = 57;
+  public double autonDistToFender = 80; 
   public boolean robotAtPosOne = false;
   public boolean robotSpinComplete = false;
   public boolean robotAtFender = false;
@@ -134,7 +133,6 @@ public class Robot extends TimedRobot {
     mNoCargoAtIntake = new DigitalInput(0); // TRUE = no cargo; FALSE = cargo!
     mCargoBeforeShooter = new DigitalInput(1); // TRUE = cargo!; FALSE = no cargo
     mSwitch = new DigitalInput(2);
-    //mCameraServo = new Servo(0);
 
     // Main Mechanism
 
@@ -187,30 +185,22 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("[Shoot] RPM", mShooterEncoder.getVelocity());
     SmartDashboard.putBoolean("[Cargo] Intake", mCargoAtIntake);
     SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
-    //SmartDashboard.putNumber("Servo Angle", mCameraServo.getAngle());
     SmartDashboard.putNumber("Shoot Time", shootTime);
     SmartDashboard.putBoolean("AutonSwitch", mAutonSwitch);
     SmartDashboard.putBoolean("posone", robotAtPosOne);
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
-    SmartDashboard.putBoolean("fender", robotAtFender);
-    
+    SmartDashboard.putBoolean("fender", robotAtFender);    
   }
 
   @Override
   public void autonomousInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-    //mCameraServo.setAngle(70);
     autonStartTime = Timer.getFPGATimestamp();
     
     robotAtPosOne = false;
     robotSpinComplete = false;
     robotAtFender = false;
-
-    mLeftDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
   }
 
   @Override
@@ -227,10 +217,8 @@ public class Robot extends TimedRobot {
 
     // wait x time
     if ((autonCurrentTime - autonStartTime) >= autonWaitTime) {
-      // shoot cargo
-      /*
+       /*
        * spin up fly wheel to 0.75 (~4000 RPM)
-       * wait x seconds?
        * move index motor to push cargo into flywheel
        * stop both motors after x seconds
        * 
@@ -280,12 +268,15 @@ public class Robot extends TimedRobot {
       }
 
       else { //two-cargo auto
-        //move forward to autoPositionOne
-        //start Intake to pick up cargo
-        //complete move
-        //spin 180 degrees
-        //move distance back (autoPositionOne + x)
-        //fire
+
+        /*
+         move forward to autoPositionOne
+        * start Intake to pick up cargo
+        * complete move
+        * spin 180 degrees
+        * move to fender
+        * fire both
+        */
 
         // move forward to autonPositionOne
         if (!robotAtPosOne) {
@@ -384,14 +375,6 @@ public class Robot extends TimedRobot {
     mIntakeNow = false;
     mShootNow = false;
     mIntakeAndIndexNow = false;
-
-    // set servo to 45deg angle up
-    //mCameraServo.setAngle(10);
-
-    mLeftDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
-    mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
-    mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kCoast);
-    mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kCoast);
   }
 
   @Override
@@ -406,23 +389,6 @@ public class Robot extends TimedRobot {
       mRightEncoder.setPosition(0);
       mLeftEncoder.setPosition(0);
     }
-
-    // Set camera servo to top
-    /*
-    if (mXbox.getPOV() == 0) {
-      mCameraServo.setAngle(70);
-    }
-
-    // Set camera servo to down
-    if (mXbox.getPOV() == 180) {
-      mCameraServo.setAngle(10);
-    }
-
-    // Set camera servo to mid
-    if (mXbox.getPOV() == 270) {
-      mCameraServo.setAngle(45);
-    }
-    */
 
     // If no cargo in hand -> take cargo all the way into index
     if (!mCargoAtIntake && !mCargoBeforeShooter.get() && mStick.getRawButton(1)) {

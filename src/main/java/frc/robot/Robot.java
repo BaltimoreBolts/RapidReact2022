@@ -393,6 +393,18 @@ public class Robot extends TimedRobot {
       mLeftEncoder.setPosition(0);
     }
 
+    //allow for ejecting cargo
+    if (!mIntakeNow && !mIntakeAndIndexNow && !mShootNow) {
+      if (mXbox.getPOV() == 180) {
+        mIndexMotor.set(-0.5);
+        mIntakeMotor.set(-0.5);
+      }
+      else{
+        mIndexMotor.stopMotor();
+        mIntakeMotor.stopMotor();
+      }
+    }
+
     // If no cargo in hand -> take cargo all the way into index
     if (((!mCargoAtIntake && !mCargoBeforeShooter.get()) || (!mCargoBeforeShooter.get())) && mStick.getRawButton(1)) {
       mIntakeAndIndexNow = true;

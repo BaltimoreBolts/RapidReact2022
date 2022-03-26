@@ -65,8 +65,10 @@ public class Robot extends TimedRobot {
   public boolean mIntakeAndIndexNow = false;
 
   public double intakeStartTime;
+  public double intakeRequestTime;
   public double intakeCurrentTime;
   public double intakeTime = 2; // seconds to intake cargo
+  public double stopIntakeTime = 2.5;
 
   public double shootHighPercent = 0.80;
   public double shootHighSpeed = 4200;
@@ -289,7 +291,7 @@ public class Robot extends TimedRobot {
             mRobotDrive.arcadeDrive(0.4, 0);
           }
           else {
-            mIntakeMotor.set(0);
+            //mIntakeMotor.set(0); --moved down to 180 spin to keep cargo in hand
             mRobotDrive.arcadeDrive(0, 0);
 
             robotAtPosOne = true;
@@ -302,6 +304,7 @@ public class Robot extends TimedRobot {
             mRobotDrive.arcadeDrive(0, 0.35);
           }
           else {
+            mIntakeMotor.stopMotor();
             mRobotDrive.arcadeDrive(0, 0);
             robotSpinComplete = true;
           }
@@ -391,7 +394,7 @@ public class Robot extends TimedRobot {
     }
 
     // If no cargo in hand -> take cargo all the way into index
-    if (!mCargoAtIntake && !mCargoBeforeShooter.get() && mStick.getRawButton(1)) {
+    if (((!mCargoAtIntake && !mCargoBeforeShooter.get()) || (!mCargoBeforeShooter.get())) && mStick.getRawButton(1)) {
       mIntakeAndIndexNow = true;
       intakeStartTime = Timer.getFPGATimestamp();
     }
@@ -411,16 +414,24 @@ public class Robot extends TimedRobot {
     // If cargo in body, ONLY bring into intake
     if (!mCargoAtIntake && mCargoBeforeShooter.get() && mStick.getRawButton(1)) {
       mIntakeNow = true;
-      intakeStartTime = Timer.getFPGATimestamp();
+      intakeRequestTime = Timer.getFPGATimestamp();
     }
 
     if (mIntakeNow) {
       intakeCurrentTime = Timer.getFPGATimestamp();
-      if (!mCargoAtIntake && (intakeCurrentTime - intakeStartTime < intakeTime)) {
+      if (!mCargoAtIntake && (intakeCurrentTime - intakeRequestTime < stopIntakeTime)) {
         mIntakeMotor.set(0.5);
-      } else {
-        mIntakeMotor.stopMotor();
-        mIntakeNow = false;
+        intakeStartTime = Timer.getFPGATimestamp();
+      } 
+      else {
+          if (intakeCurrentTime - intakeStartTime < intakeTime) {
+            mIntakeMotor.set(0.5);
+          }
+          else {
+            mIntakeMotor.stopMotor();
+            mIntakeNow = false;
+          }
+
       }
     }
 

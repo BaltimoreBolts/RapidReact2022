@@ -282,11 +282,11 @@ public class Robot extends TimedRobot {
 
         // move forward to autonPositionOne
         if (!robotAtPosOne) {
-          if (mLeftEncoder.getPosition() < (autonPositionOne-20)){
+          if (mRightEncoder.getPosition() < (autonPositionOne-20)){
             mRobotDrive.arcadeDrive(0.4, 0);
           }
           //if robot within 20" of first position, turn on intake
-          else if (mLeftEncoder.getPosition() < (autonPositionOne)){
+          else if (mRightEncoder.getPosition() < (autonPositionOne)){
             mIntakeMotor.set(0.5);
             mRobotDrive.arcadeDrive(0.4, 0);
           }
@@ -300,8 +300,8 @@ public class Robot extends TimedRobot {
 
         //spin 180 degrees
         if (robotAtPosOne && !robotSpinComplete){
-          if (mLeftEncoder.getPosition() <= (autonPositionOne + autonSpinDistance)) {
-            mRobotDrive.arcadeDrive(0, 0.5);
+          if (mRightEncoder.getPosition() <= (autonPositionOne + autonSpinDistance)) {
+            mRobotDrive.arcadeDrive(0, -0.5);
           }
           else {
             mIntakeMotor.stopMotor();
@@ -313,11 +313,11 @@ public class Robot extends TimedRobot {
         
         //drive to fender
         if (robotSpinComplete && !robotAtFender) {
-          if (mLeftEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender - 24)) {
+          if (mRightEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender - 24)) {
             mRobotDrive.arcadeDrive(0.5, 0);
             }
           else {
-            if (mLeftEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender)){ 
+            if (mRightEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender)){ 
               mRobotDrive.arcadeDrive(0.25, 0);
             }
             else {

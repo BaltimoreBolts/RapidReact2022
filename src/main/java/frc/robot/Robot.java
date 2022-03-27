@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
   public double rWidth = 28.5; // robot width in inches
 
   public double autonStartTime;
-  public double autonWaitTime = 2; // seconds to wait
+  public double autonWaitTime = 0; // seconds to wait
   public double autonCurrentTime;
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
@@ -301,7 +301,7 @@ public class Robot extends TimedRobot {
         //spin 180 degrees
         if (robotAtPosOne && !robotSpinComplete){
           if (mLeftEncoder.getPosition() <= (autonPositionOne + autonSpinDistance)) {
-            mRobotDrive.arcadeDrive(0, 0.35);
+            mRobotDrive.arcadeDrive(0, 0.5);
           }
           else {
             mIntakeMotor.stopMotor();

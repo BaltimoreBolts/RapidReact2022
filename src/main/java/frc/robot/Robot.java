@@ -31,8 +31,8 @@ public class Robot extends TimedRobot {
   public CANSparkMax mShooterMotor;
   public RelativeEncoder mShooterEncoder;
 
-  //public CANSparkMax mKickStandMotor;
-  //public RelativeEncoder mKickEncoder;
+  public CANSparkMax mKickStandMotor;
+  public RelativeEncoder mKickEncoder;
 
   public PowerDistribution mPowerDistribution;
   //public Servo mCameraServo;
@@ -163,12 +163,11 @@ public class Robot extends TimedRobot {
     mShooterMotor.burnFlash();
 
     //Kick Stand
-    /*
     mKickStandMotor = new CANSparkMax(10, MotorType.kBrushless);
     mKickStandMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     mKickEncoder = mKickStandMotor.getEncoder();
     mKickStandMotor.burnFlash();
-    */
+    
 
     mStick = new Joystick(0);
     mXbox = new XboxController(1);
@@ -203,7 +202,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("posone", robotAtPosOne);
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
     SmartDashboard.putBoolean("fender", robotAtFender);    
-    //SmartDashboard.putNumber("[KS] Encoder]", mKickEncoder.getPosition());
+    SmartDashboard.putNumber("[KS] Encoder]", mKickEncoder.getPosition());
   }
 
   @Override
@@ -382,7 +381,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-    //mKickEncoder.setPosition(0);
+    mKickEncoder.setPosition(0);
     mIndexMotor.stopMotor();
     mIntakeMotor.stopMotor();
     mShooterMotor.stopMotor();
@@ -408,7 +407,6 @@ public class Robot extends TimedRobot {
 
 
     //control of KickStand
-    /*
     if (mXbox.getXButton()){
       mKickStandMotor.set(0.75);
     }
@@ -418,8 +416,7 @@ public class Robot extends TimedRobot {
     else {
       mKickStandMotor.stopMotor();
     }
-    */
-
+  
     //allow for ejecting cargo
     if (!mIntakeNow && !mIntakeAndIndexNow && !mShootNow) {
       if (mXbox.getPOV() == 180) {

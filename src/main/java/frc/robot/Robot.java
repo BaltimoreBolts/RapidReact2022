@@ -5,6 +5,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -14,8 +15,14 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.SPI;
+
+import com.kauailabs.navx.frc.AHRS;
 
 public class Robot extends TimedRobot {
+
+  public AHRS mGyro;
+
   public CANSparkMax mLeftDriveMotor1;
   public CANSparkMax mRightDriveMotor1;
   public CANSparkMax mLeftDriveMotor2;
@@ -86,12 +93,21 @@ public class Robot extends TimedRobot {
   public double shootTwoTime = 3; // seconds to fire 2 cargo
   public double shootTime = 0;
 
+  public double mCurrentAngle;
+
   @Override
   public void robotInit() {
     // Power Distribution -- must be at CAN ID 1
     mPowerDistribution = new PowerDistribution(1, ModuleType.kRev);
     mPowerDistribution.clearStickyFaults();
     mPowerDistribution.setSwitchableChannel(false);
+
+    //navX
+    try {
+      mGyro = new AHRS(SPI.Port.kMXP);
+    } catch (RuntimeException ex) {
+      DriverStation.reportError("Error instantiating navX MXP: " + ex.getMessage(), true);
+    }
 
     // Drive Motors
     mLeftDriveMotor1 = new CANSparkMax(5, MotorType.kBrushless);
@@ -185,6 +201,7 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     mCargoAtIntake = !mNoCargoAtIntake.get(); // invert - TRUE=cargo!
     mAutonSwitch = !mSwitch.get(); // TRUE = two cargo; FALSE = one cargo
+    mCurrentAngle = mGyro.getAngle();
 
     // Light control
     if (mCargoBeforeShooter.get()) {
@@ -204,6 +221,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("posone", robotAtPosOne);
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
     SmartDashboard.putBoolean("fender", robotAtFender);    
+    SmartDashboard.putNumber("Gyro", mCurrentAngle);
     //SmartDashboard.putNumber("[KS] Encoder]", mKickEncoder.getPosition());
   }
 
@@ -216,6 +234,8 @@ public class Robot extends TimedRobot {
     robotAtPosOne = false;
     robotSpinComplete = false;
     robotAtFender = false;
+
+    mGyro.reset();
   }
 
   @Override
@@ -392,6 +412,8 @@ public class Robot extends TimedRobot {
     mIntakeNow = false;
     mShootNow = false;
     mIntakeAndIndexNow = false;
+
+    mGyro.reset();
   }
 
   @Override
@@ -405,6 +427,7 @@ public class Robot extends TimedRobot {
     if (mStick.getRawButton(12)) {
       mRightEncoder.setPosition(0);
       mLeftEncoder.setPosition(0);
+      mGyro.reset();
     }
 
 

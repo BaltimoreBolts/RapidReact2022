@@ -64,9 +64,11 @@ public class Robot extends TimedRobot {
   public double autonCurrentTime;
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
-  public double autonSpinDistance = 57;
-  public double autonDistToFender = 80; 
+  public double autonPositionTwo = 25;
+  public double gryoEndAngle = -150;
+  public double autonDistToFender = 40; 
   public boolean robotAtPosOne = false;
+  public boolean robotAtPosTwo = false;
   public boolean robotSpinComplete = false;
   public boolean robotAtFender = false;
 
@@ -219,6 +221,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Shoot Time", shootTime);
     SmartDashboard.putBoolean("AutonSwitch", mAutonSwitch);
     SmartDashboard.putBoolean("posone", robotAtPosOne);
+    SmartDashboard.putBoolean("postwo", robotAtPosTwo);
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
     SmartDashboard.putBoolean("fender", robotAtFender);    
     SmartDashboard.putNumber("Gyro", mCurrentAngle);
@@ -331,14 +334,29 @@ public class Robot extends TimedRobot {
           }
         } 
 
-        //spin 180 degrees
-        if (robotAtPosOne && !robotSpinComplete){
-          if (mRightEncoder.getPosition() <= (autonPositionOne + autonSpinDistance)) {
-            mRobotDrive.arcadeDrive(0, -0.5);
+        // move back from wall
+        if (robotAtPosOne && !robotAtPosTwo){
+          if (mRightEncoder.getPosition() >= (autonPositionTwo)) {
+            mRobotDrive.arcadeDrive(-0.5, 0);
           }
           else {
             mIntakeMotor.stopMotor();
             mRobotDrive.arcadeDrive(0, 0);
+            mGyro.reset();
+            robotAtPosTwo = true;
+          }
+          
+        }
+        //spin 180 degrees
+        if (robotAtPosTwo && !robotSpinComplete){
+          if (gryoEndAngle <= mCurrentAngle) {
+            mRobotDrive.arcadeDrive(0, -0.35);
+          }
+          else {
+            mIntakeMotor.stopMotor();
+            mRobotDrive.arcadeDrive(0, 0);
+            mLeftEncoder.setPosition(0);
+            mRightEncoder.setPosition(0);
             robotSpinComplete = true;
           }
           
@@ -346,11 +364,11 @@ public class Robot extends TimedRobot {
         
         //drive to fender
         if (robotSpinComplete && !robotAtFender) {
-          if (mRightEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender - 24)) {
+          if (mLeftEncoder.getPosition() < autonDistToFender) {
             mRobotDrive.arcadeDrive(0.5, 0);
             }
           else {
-            if (mRightEncoder.getPosition() < (autonPositionOne + autonSpinDistance + autonDistToFender)){ 
+            if (mRightEncoder.getPosition() < autonDistToFender){ 
               mRobotDrive.arcadeDrive(0.25, 0);
             }
             else {

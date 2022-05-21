@@ -49,6 +49,9 @@ public class Robot extends TimedRobot {
   public DigitalInput mCargoBeforeShooter;
   public DigitalInput mSwitch;
   public boolean mAutonSwitch;
+  public DigitalInput mSwitch2;
+  public boolean mAutoWall;
+
 
   public Joystick mStick;
   public XboxController mXbox;
@@ -65,7 +68,8 @@ public class Robot extends TimedRobot {
   public double autonFinalPos = -120; // inches to drive backwards
   public double autonPositionOne = 55; // inches to drive forwards (auton2)
   public double autonPositionTwo = 25;
-  public double gryoEndAngle = -150;
+  public double gryoEndAngleNoWall = 160; // turn for auto with the non-wall cargo
+  public double gryoEndAngleWall = -150; // turn for auto with the wall cargo
   public double autonDistToFender = 40; 
   public boolean robotAtPosOne = false;
   public boolean robotAtPosTwo = false;
@@ -156,6 +160,7 @@ public class Robot extends TimedRobot {
     mNoCargoAtIntake = new DigitalInput(0); // TRUE = no cargo; FALSE = cargo!
     mCargoBeforeShooter = new DigitalInput(1); // TRUE = cargo!; FALSE = no cargo
     mSwitch = new DigitalInput(2);
+    mSwitch2 = new DigitalInput(3);
 
     // Main Mechanism
 
@@ -203,6 +208,7 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     mCargoAtIntake = !mNoCargoAtIntake.get(); // invert - TRUE=cargo!
     mAutonSwitch = !mSwitch.get(); // TRUE = two cargo; FALSE = one cargo
+    mAutoWall = !mSwitch2.get(); // True = wall cargo; FALSE = no wall
     mCurrentAngle = mGyro.getAngle();
 
     // Light control
@@ -220,6 +226,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("[Cargo] Index", mCargoBeforeShooter.get());
     SmartDashboard.putNumber("Shoot Time", shootTime);
     SmartDashboard.putBoolean("AutonSwitch", mAutonSwitch);
+    SmartDashboard.putBoolean("AutoWall", mAutoWall);
     SmartDashboard.putBoolean("posone", robotAtPosOne);
     SmartDashboard.putBoolean("postwo", robotAtPosTwo);
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
@@ -347,20 +354,34 @@ public class Robot extends TimedRobot {
           }
           
         }
-        //spin 180 degrees
+        //spin to desired angle - use Wall Angle or Not Wall based on switch
         if (robotAtPosTwo && !robotSpinComplete){
-          if (gryoEndAngle <= mCurrentAngle) {
-            mRobotDrive.arcadeDrive(0, -0.35);
+          if (mAutoWall) {
+            if (gryoEndAngleWall <= mCurrentAngle){
+              mRobotDrive.arcadeDrive(0, -0.35);
+            }
+            else {
+              mIntakeMotor.stopMotor();
+              mRobotDrive.arcadeDrive(0, 0);
+              mLeftEncoder.setPosition(0);
+              mRightEncoder.setPosition(0);
+              robotSpinComplete = true;
+            }
           }
           else {
-            mIntakeMotor.stopMotor();
-            mRobotDrive.arcadeDrive(0, 0);
-            mLeftEncoder.setPosition(0);
-            mRightEncoder.setPosition(0);
-            robotSpinComplete = true;
+            if (gryoEndAngleNoWall >= mCurrentAngle) {
+              mRobotDrive.arcadeDrive(0, 0.35);
+            }
+            else {
+              mIntakeMotor.stopMotor();
+              mRobotDrive.arcadeDrive(0, 0);
+              mLeftEncoder.setPosition(0);
+              mRightEncoder.setPosition(0);
+              robotSpinComplete = true;
+            }
           }
-          
-        }
+        }  
+
         
         //drive to fender
         if (robotSpinComplete && !robotAtFender) {

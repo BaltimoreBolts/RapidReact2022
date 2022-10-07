@@ -33,6 +33,13 @@ public class Robot extends TimedRobot {
   public RelativeEncoder mLeftEncoder;
   public RelativeEncoder mRightEncoder;
 
+  public RelativeEncoder mRHangerEncoder;
+  public RelativeEncoder mLHangerEncoder;
+
+  public CANSparkMax mLeftHanger;
+  public CANSparkMax mRightHanger;
+  public MotorControllerGroup mHangMotors;
+
   public CANSparkMax mIntakeMotor;
   public CANSparkMax mIndexMotor;
   public CANSparkMax mShooterMotor;
@@ -80,6 +87,10 @@ public class Robot extends TimedRobot {
   public boolean mIntakeNow = false;
   public boolean mIntakeAndIndexNow = false;
 
+  public double mHangEncoder = 0;
+  public double topHang = 1000;
+  public double bottomHang = 300;
+
   public double intakeStartTime;
   public double intakeRequestTime;
   public double intakeCurrentTime;
@@ -123,6 +134,11 @@ public class Robot extends TimedRobot {
     mLeftMotors = new MotorControllerGroup(mLeftDriveMotor1, mLeftDriveMotor2);
     mRightMotors = new MotorControllerGroup(mRightDriveMotor1, mRightDriveMotor2);
 
+    // Hanging Motors
+    mLeftHanger = new CANSparkMax(9, MotorType.kBrushless);
+    mRightHanger = new CANSparkMax(10, MotorType.kBrushless);
+    mHangMotors = new MotorControllerGroup(mRightHanger, mLeftHanger);
+
     mLeftDriveMotor1.restoreFactoryDefaults();
     mLeftDriveMotor2.restoreFactoryDefaults();
     mRightDriveMotor1.restoreFactoryDefaults();
@@ -135,6 +151,16 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
     mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
     mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
+
+    mLeftHanger.restoreFactoryDefaults();
+    mLeftHanger.setSmartCurrentLimit(40);
+    mLeftHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    mRightHanger.restoreFactoryDefaults();
+    mRightHanger.setSmartCurrentLimit(40);
+    mRightHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
+
+    mRHangerEncoder = mRightHanger.getEncoder();
+    mLHangerEncoder = mLeftHanger.getEncoder();
 
     mLeftDriveMotor1.follow(mLeftDriveMotor2);
     mRightDriveMotor1.follow(mRightDriveMotor2);
@@ -153,6 +179,8 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor2.burnFlash();
     mRightDriveMotor1.burnFlash();
     mRightDriveMotor2.burnFlash();
+    mLeftHanger.burnFlash();
+    mRightHanger.burnFlash();
 
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
 
@@ -482,6 +510,14 @@ public class Robot extends TimedRobot {
       mKickStandMotor.stopMotor();
     }
     */
+
+    //Hanging
+    if ((mXbox.getBButton()) &&  {
+      mHangMotors.set(-.3);
+    }
+    if (mXbox.getXButton() && ) {
+      mHangMotors.set(-.3);
+    }
   
     //allow for ejecting cargo
     if (!mIntakeNow && !mIntakeAndIndexNow && !mShootNow) {

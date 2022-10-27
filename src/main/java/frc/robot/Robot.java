@@ -35,7 +35,6 @@ public class Robot extends TimedRobot {
 
   public RelativeEncoder mRHangerEncoder;
   public RelativeEncoder mLHangerEncoder;
-
   public CANSparkMax mLeftHanger;
   public CANSparkMax mRightHanger;
   public MotorControllerGroup mHangMotors;
@@ -45,11 +44,7 @@ public class Robot extends TimedRobot {
   public CANSparkMax mShooterMotor;
   public RelativeEncoder mShooterEncoder;
 
-  //public CANSparkMax mKickStandMotor;
-  //public RelativeEncoder mKickEncoder;
-
   public PowerDistribution mPowerDistribution;
-  //public Servo mCameraServo;
 
   public DigitalInput mNoCargoAtIntake;
   public boolean mCargoAtIntake;
@@ -87,9 +82,16 @@ public class Robot extends TimedRobot {
   public boolean mIntakeNow = false;
   public boolean mIntakeAndIndexNow = false;
 
-  public double mHangEncoder = 0;
-  public double topHang = 1000;
-  public double bottomHang = 300;
+  public double highHangR = 103.00; // max encoder value at full extension for RIGHT hanger
+  public double highHangL = 114.00; // max encoder value at full extension for LEFT hanger
+  public double midHangR = 50.50; // max encoder value at full extension for RIGHT hanger
+  public double midHangL = 55.38; // max encoder value at full extension for LEFT hanger
+  public double closedHang = 0; // min encoder value at collapsed
+  public double speedRatio = 1.15; // multiplier to account for mechanical diff in hangers
+  public double speedUp = 0.5;
+  public double speedDown = -0.4;
+  public boolean mHangerGoToMAX = false;
+  public boolean mHangerGoToMID = false;
 
   public double intakeStartTime;
   public double intakeRequestTime;
@@ -106,7 +108,7 @@ public class Robot extends TimedRobot {
 
   public double shootStartTime;
   public double shootCurrentTime;
-  public double shootOneTime = 2; // seconds to fire 1 cargo
+  public double shootOneTime = 3; // seconds to fire 1 cargo
   public double shootTwoTime = 3; // seconds to fire 2 cargo
   public double shootTime = 0;
 
@@ -134,11 +136,6 @@ public class Robot extends TimedRobot {
     mLeftMotors = new MotorControllerGroup(mLeftDriveMotor1, mLeftDriveMotor2);
     mRightMotors = new MotorControllerGroup(mRightDriveMotor1, mRightDriveMotor2);
 
-    // Hanging Motors
-    mLeftHanger = new CANSparkMax(9, MotorType.kBrushless);
-    mRightHanger = new CANSparkMax(10, MotorType.kBrushless);
-    mHangMotors = new MotorControllerGroup(mRightHanger, mLeftHanger);
-
     mLeftDriveMotor1.restoreFactoryDefaults();
     mLeftDriveMotor2.restoreFactoryDefaults();
     mRightDriveMotor1.restoreFactoryDefaults();
@@ -151,16 +148,6 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
     mRightDriveMotor1.setIdleMode(CANSparkMax.IdleMode.kBrake);
     mRightDriveMotor2.setIdleMode(CANSparkMax.IdleMode.kBrake);
-
-    mLeftHanger.restoreFactoryDefaults();
-    mLeftHanger.setSmartCurrentLimit(40);
-    mLeftHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    mRightHanger.restoreFactoryDefaults();
-    mRightHanger.setSmartCurrentLimit(40);
-    mRightHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
-
-    mRHangerEncoder = mRightHanger.getEncoder();
-    mLHangerEncoder = mLeftHanger.getEncoder();
 
     mLeftDriveMotor1.follow(mLeftDriveMotor2);
     mRightDriveMotor1.follow(mRightDriveMotor2);
@@ -179,10 +166,24 @@ public class Robot extends TimedRobot {
     mLeftDriveMotor2.burnFlash();
     mRightDriveMotor1.burnFlash();
     mRightDriveMotor2.burnFlash();
-    mLeftHanger.burnFlash();
-    mRightHanger.burnFlash();
 
     mRobotDrive = new DifferentialDrive(mLeftMotors, mRightMotors);
+
+    // Hanging Motors
+    mRightHanger = new CANSparkMax(9, MotorType.kBrushless);
+    mLeftHanger = new CANSparkMax(10, MotorType.kBrushless);
+    
+    mLeftHanger.restoreFactoryDefaults();
+    mLeftHanger.setSmartCurrentLimit(40);
+    mLeftHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    mRightHanger.restoreFactoryDefaults();
+    mRightHanger.setSmartCurrentLimit(40);
+    mRightHanger.setIdleMode(CANSparkMax.IdleMode.kBrake);
+
+    mRHangerEncoder = mRightHanger.getEncoder();
+    mLHangerEncoder = mLeftHanger.getEncoder();
+    mLeftHanger.burnFlash();
+    mRightHanger.burnFlash();
 
     // Sensors
     mNoCargoAtIntake = new DigitalInput(0); // TRUE = no cargo; FALSE = cargo!
@@ -191,7 +192,6 @@ public class Robot extends TimedRobot {
     mSwitch2 = new DigitalInput(3);
 
     // Main Mechanism
-
     mIntakeMotor = new CANSparkMax(6, MotorType.kBrushless);
     mIndexMotor = new CANSparkMax(7, MotorType.kBrushless);
     mShooterMotor = new CANSparkMax(8, MotorType.kBrushless);
@@ -212,15 +212,6 @@ public class Robot extends TimedRobot {
     mIntakeMotor.burnFlash();
     mIndexMotor.burnFlash();
     mShooterMotor.burnFlash();
-
-    //Kick Stand
-    /*
-    mKickStandMotor = new CANSparkMax(10, MotorType.kBrushless);
-    mKickStandMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    mKickEncoder = mKickStandMotor.getEncoder();
-    mKickStandMotor.burnFlash();
-    */
-    
 
     mStick = new Joystick(0);
     mXbox = new XboxController(1);
@@ -260,7 +251,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("spincomp", robotSpinComplete);
     SmartDashboard.putBoolean("fender", robotAtFender);    
     SmartDashboard.putNumber("Gyro", mCurrentAngle);
-    //SmartDashboard.putNumber("[KS] Encoder]", mKickEncoder.getPosition());
+    SmartDashboard.putNumber("[H] LT-EncPos", mLHangerEncoder.getPosition());
+    SmartDashboard.putNumber("[H] RT-EncPos", mRHangerEncoder.getPosition());
   }
 
   @Override
@@ -270,6 +262,7 @@ public class Robot extends TimedRobot {
     autonStartTime = Timer.getFPGATimestamp();
     
     robotAtPosOne = false;
+    robotAtPosTwo = false;
     robotSpinComplete = false;
     robotAtFender = false;
 
@@ -470,11 +463,17 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
-    //mKickEncoder.setPosition(0);
     mIndexMotor.stopMotor();
     mIntakeMotor.stopMotor();
     mShooterMotor.stopMotor();
     mRobotDrive.arcadeDrive(0, 0);
+
+    mRHangerEncoder.setPosition(0);
+    mLHangerEncoder.setPosition(0);
+    mLeftHanger.stopMotor();
+    mRightHanger.stopMotor();
+    mHangerGoToMAX = false;
+    mHangerGoToMID = false;
 
     mIntakeNow = false;
     mShootNow = false;
@@ -490,38 +489,106 @@ public class Robot extends TimedRobot {
     mTwist = mStick.getTwist() * ((mStick.getThrottle() * -0.5) + 0.5);
     mRobotDrive.arcadeDrive(mSpeed, mTwist);
 
-    // Reset encoder
+    // Reset encoders & gyro
     if (mStick.getRawButton(12)) {
       mRightEncoder.setPosition(0);
       mLeftEncoder.setPosition(0);
+      mRHangerEncoder.setPosition(0);
+      mLHangerEncoder.setPosition(0);
       mGyro.reset();
     }
 
-
-    //control of KickStand
-    /*
-    if (mXbox.getXButton()){
-      mKickStandMotor.set(0.95);
-    }
-    else if (mXbox.getBButton()){
-      mKickStandMotor.set(-0.95);
-    }
-    else {
-      mKickStandMotor.stopMotor();
-    }
+    /*Hanging logic
+    Auto position hanging: 
+      High = DPad UP
+      Mid = DPad LEFT or RIGHT
+      Close = DPad DOWN  (mXbox.getPOV() == 180)
+      
+    Control
+      Left Hanger Up = Left Bumper
+      Left Hanger Down = Left Trigger (full pull)
+      Right Hanger Up = Right Bumper
+      Right Hanger Down = Right Trigger (full pull)  
     */
 
-    //Hanging
-    if ((mXbox.getBButton()) &&  {
-      mHangMotors.set(-.3);
+    if ((mXbox.getPOV()==0) || mHangerGoToMAX){  //Raise both hangars to MAX
+      mHangerGoToMAX = true;
+      if (mRHangerEncoder.getPosition() < highHangR) {
+        mRightHanger.set(speedUp);
+      }
+      else {
+        mRightHanger.stopMotor();
+      }
+      if (mLHangerEncoder.getPosition() < highHangL) {
+        mLeftHanger.set(speedUp * speedRatio);
+      }
+      else {
+        mLeftHanger.stopMotor();
+      }
+      if ((mRHangerEncoder.getPosition() >= highHangR) && (mLHangerEncoder.getPosition() >= highHangL)) {
+        mHangerGoToMAX = false;
+      }
     }
-    if (mXbox.getXButton() && ) {
-      mHangMotors.set(-.3);
+    else if ((mXbox.getPOV()==90) || (mXbox.getPOV()==270) || mHangerGoToMID) {  //Raise both hangars to MID
+      mHangerGoToMID = true;
+      if (mRHangerEncoder.getPosition() < midHangR) {
+        mRightHanger.set(speedUp);
+      }
+      else {
+        mRightHanger.stopMotor();
+      }
+      if (mLHangerEncoder.getPosition() < midHangL) {
+        mLeftHanger.set(speedUp * speedRatio);
+      }
+      else {
+        mLeftHanger.stopMotor();
+      }
+      if ((mRHangerEncoder.getPosition() >= midHangR) && (mLHangerEncoder.getPosition() >= midHangL)) {
+        mHangerGoToMID = false;
+      }
     }
-  
+    else if ((mXbox.getPOV()==180)) {  //Close both hangars
+      if (mRHangerEncoder.getPosition() > closedHang) {
+        mRightHanger.set(speedDown);
+      }
+      else {
+        mRightHanger.stopMotor();
+      }
+      if (mLHangerEncoder.getPosition() > closedHang) {
+        mLeftHanger.set(speedDown * speedRatio);
+      }
+      else {
+        mLeftHanger.stopMotor();
+      }
+      mHangerGoToMID = false;
+      mHangerGoToMAX = false;
+    }
+    else if (mXbox.getLeftBumper()) { //Left hangar UP
+      mLeftHanger.set(0.25 * speedRatio);
+      mRightHanger.stopMotor();
+    }
+    else if (mXbox.getLeftTriggerAxis() == 1){ //Left hangar DOWN
+      mLeftHanger.set(-0.25 * speedRatio);
+      mRightHanger.stopMotor();
+    }
+    else if (mXbox.getRightBumper()) { //Right hangar UP
+      mRightHanger.set(0.25);
+      mLeftHanger.stopMotor();
+    }
+    else if (mXbox.getRightTriggerAxis() == 1){ //Right hangar DOWN
+      mRightHanger.set(-0.25);
+      mLeftHanger.stopMotor();
+    }    
+    else {
+      mRightHanger.stopMotor();
+      mLeftHanger.stopMotor();
+      mHangerGoToMID = false;
+      mHangerGoToMAX = false;
+    }
+    
     //allow for ejecting cargo
     if (!mIntakeNow && !mIntakeAndIndexNow && !mShootNow) {
-      if (mXbox.getPOV() == 180) {
+      if (mXbox.getBButton()) {
         mIndexMotor.set(-0.5);
         mIntakeMotor.set(-0.5);
       }
@@ -620,12 +687,15 @@ public class Robot extends TimedRobot {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
     robotAtPosOne = false;
+    robotAtPosTwo = false;
     robotSpinComplete = false;
     robotAtFender = false;
     mIntakeNow = false;
     mShootNow = false;
     mIntakeAndIndexNow = false;
     shootTime = 0;
+    mHangerGoToMAX = false;
+    mHangerGoToMID = false;
   }
 
   @Override
@@ -633,11 +703,14 @@ public class Robot extends TimedRobot {
     mRightEncoder.setPosition(0);
     mLeftEncoder.setPosition(0);
     robotAtPosOne = false;
+    robotAtPosTwo = false;
     robotSpinComplete = false;
     robotAtFender = false;
     mIntakeNow = false;
     mShootNow = false;
     mIntakeAndIndexNow = false;
     shootTime = 0;
+    mHangerGoToMAX = false;
+    mHangerGoToMID = false;
   }
 }

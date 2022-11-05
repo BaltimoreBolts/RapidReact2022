@@ -82,12 +82,12 @@ public class Robot extends TimedRobot {
   public boolean mIntakeNow = false;
   public boolean mIntakeAndIndexNow = false;
 
-  public double highHangR = 103.00; // max encoder value at full extension for RIGHT hanger
-  public double highHangL = 114.00; // max encoder value at full extension for LEFT hanger
-  public double midHangR = 50.50; // max encoder value at full extension for RIGHT hanger
-  public double midHangL = 55.38; // max encoder value at full extension for LEFT hanger
+  public double highHangR = 96.00; // max encoder value at full extension for RIGHT hanger
+  public double highHangL = 91.00; // max encoder value at full extension for LEFT hanger
+  public double midHangR = 47.50; // max encoder value at full extension for RIGHT hanger
+  public double midHangL = 50.0; // max encoder value at full extension for LEFT hanger
   public double closedHang = 0; // min encoder value at collapsed
-  public double speedRatio = 1.15; // multiplier to account for mechanical diff in hangers
+  public double speedRatio = 1.0; //1.15; // multiplier to account for mechanical diff in hangers
   public double speedUp = 0.5;
   public double speedDown = -0.4;
   public boolean mHangerGoToMAX = false;
